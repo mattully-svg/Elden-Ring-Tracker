@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elden Ring — Completion Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --gold-dim: #7a6230;
+    --ember: #b84a1a;
+    --ember-glow: #e05a20;
+    --bg-deep: #0a0806;
+    --bg-mid: #100d09;
+    --bg-panel: #15100c;
+    --bg-card: #1a1410;
+    --border: #2e2218;
+    --border-gold: #3d2e18;
+    --text: #c8b89a;
+    --text-dim: #7a6a54;
+    --text-bright: #e8d8b8;
+    --grace: #f0c040;
+    --complete: #4a8c4a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(201,168,76,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(184,74,26,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    text-align: center;
+    padding: 56px 24px 36px;
+    border-bottom: 1px solid var(--border-gold);
+    background: linear-gradient(180deg, #080604 0%, transparent 100%);
+  }
+
+  .rune-decoration {
+    font-size: 13px;
+    letter-spacing: 8px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    font-family: 'Cinzel', serif;
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    color: var(--gold-light);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 0 60px rgba(201,168,76,0.3), 0 2px 4px rgba(0,0,0,0.8);
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+  }
+
+  /* ── TOTAL PROGRESS ── */
+  .total-progress {
+    max-width: 640px;
+    margin: 32px auto 0;
+    padding: 0 24px;
+  }
+
+  .total-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 8px;
+  }
+
+  .total-label span:last-child { color: var(--gold); font-weight: 600; }
+
+  .progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold-light));
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px rgba(201,168,76,0.5);
+  }
+
+  /* ── NAV TABS ── */
+  .nav-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,8,6,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-scroll {
+    display: flex;
+    gap: 2px;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav-scroll::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 14px 18px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* ── MAIN CONTENT ── */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-gold);
+  }
+
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 2px;
+  }
+
+  .section-count {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .section-count span { color: var(--gold); }
+
+  /* ── SECTION PROGRESS ── */
+  .section-progress { margin-bottom: 24px; }
+  .section-progress .progress-track { height: 3px; }
+
+  .section-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  /* ── CHECKLIST ── */
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .check-item-wrap {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    transition: border-color 0.15s;
+  }
+
+  .check-item-wrap:hover { border-color: var(--border-gold); }
+  .check-item-wrap.done { background: rgba(74,140,74,0.06); border-color: rgba(74,140,74,0.2); }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .check-item:hover { background: rgba(255,255,255,0.02); }
+
+  .check-item-wrap.done .item-name {
+    color: var(--text-dim);
+    text-decoration: line-through;
+    text-decoration-color: var(--text-dim);
+  }
+
+  .check-box {
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--border-gold);
+    border-radius: 2px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    background: var(--bg-deep);
+  }
+
+  .check-item-wrap.done .check-box { background: var(--complete); border-color: var(--complete); }
+
+  .check-box svg { opacity: 0; transition: opacity 0.15s; }
+  .check-item-wrap.done .check-box svg { opacity: 1; }
+
+  .item-name {
+    flex: 1;
+    color: var(--text-bright);
+    font-size: 1rem;
+    transition: color 0.15s;
+  }
+
+  .item-note {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    font-style: italic;
+    flex-shrink: 0;
+  }
+
+  /* ── NOTE BUTTON ── */
+  .note-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .note-btn:hover { color: var(--gold); background: rgba(201,168,76,0.08); }
+  .note-btn.has-note { color: var(--gold-dim); }
+  .note-btn svg { flex-shrink: 0; }
+
+  /* ── NOTE AREA ── */
+  .note-area {
+    display: none;
+    padding: 0 16px 12px 48px;
+  }
+
+  .note-area.open { display: block; }
+
+  .note-textarea {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-gold);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Crimson Text', serif;
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    resize: vertical;
+    min-height: 60px;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.5;
+  }
+
+  .note-textarea::placeholder { color: var(--text-dim); font-style: italic; }
+  .note-textarea:focus { border-color: var(--gold-dim); }
+
+  /* ── SUBSECTION ── */
+  .subsection { margin-bottom: 28px; }
+
+  .subsection-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .ctrl-btn {
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-gold);
+    border-radius: 3px;
+    color: var(--gold-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ctrl-btn:hover { background: var(--border-gold); color: var(--gold-light); }
+
+  .ctrl-btn.danger { border-color: rgba(184,74,26,0.4); color: rgba(184,74,26,0.7); }
+  .ctrl-btn.danger:hover { background: rgba(184,74,26,0.15); color: var(--ember-glow); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    font-style: italic;
+  }
+
+  footer a { color: var(--gold-dim); text-decoration: none; }
+  footer a:hover { color: var(--gold); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-deep); }
+  ::-webkit-scrollbar-thumb { background: var(--border-gold); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.8rem; }
+    .check-item { padding: 10px 12px; }
+    .item-note { display: none; }
+    .note-area { padding-left: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="rune-decoration">&#10022; The Lands Between &#10022;</div>
+  <h1>Elden Ring</h1>
+  <div class="subtitle">Completion Tracker</div>
+  <div class="total-progress">
+    <div class="total-label">
+      <span>Total Completion</span>
+      <span id="total-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="total-bar" style="width:0%"></div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-wrapper">
+  <div class="nav-scroll" id="nav-tabs"></div>
+</nav>
+
+<main id="main-content"></main>
+
+<footer>
+  Based on <a href="https://docs.google.com/spreadsheets/d/1ndIm3asH2uNUrhKE-By-ZR6UdJ90MPKglZBaTwAo7ak/" target="_blank">Rahuruk's Elden Ring Checklist</a>.
+  Progress and notes are saved locally in your browser.
+</footer>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const SECTIONS = [
+  {
+    id: 'bosses',
+    label: 'Bosses',
+    items: [
+      { id: 'b1', name: 'Margit, the Fell Omen', note: 'Limgrave' },
+      { id: 'b2', name: 'Godrick the Grafted', note: 'Stormveil Castle' },
+      { id: 'b3', name: 'Leonine Misbegotten', note: 'Castle Morne' },
+      { id: 'b4', name: 'Crucible Knight', note: 'Stormhill Evergaol' },
+      { id: 'b5', name: 'Bloodhound Knight Darriwil', note: 'Forlorn Hound Evergaol' },
+      { id: 'b6', name: 'Flying Dragon Agheel', note: 'Dragon-Burnt Ruins' },
+      { id: 'b7', name: 'Tibia Mariner', note: 'Summonwater Village' },
+      { id: 'b8', name: 'Tree Sentinel', note: 'Limgrave' },
+      { id: 'b9', name: 'Grafted Scion', note: 'Chapel of Anticipation' },
+      { id: 'b10', name: 'Erdtree Avatar', note: 'Weeping Peninsula' },
+      { id: 'b11', name: 'Ulcerated Tree Spirit', note: 'Weeping Peninsula' },
+      { id: 'b12', name: 'Red Wolf of Radagon', note: 'Raya Lucaria Academy' },
+      { id: 'b13', name: 'Rennala, Queen of the Full Moon', note: 'Raya Lucaria Academy' },
+      { id: 'b14', name: 'Royal Knight Loretta', note: 'Caria Manor' },
+      { id: 'b15', name: 'Glintstone Dragon Smarag', note: 'Liurnia' },
+      { id: 'b16', name: 'Magma Wyrm Makar', note: 'Ruin-Strewn Precipice' },
+      { id: 'b17', name: 'Dragonkin Soldier of Nokstella', note: 'Lake of Rot' },
+      { id: 'b18', name: 'Borealis the Freezing Fog', note: 'Liurnia' },
+      { id: 'b19', name: 'Starscourge Radahn', note: 'Caelid' },
+      { id: 'b20', name: 'Malenia, Blade of Miquella', note: 'Haligtree' },
+      { id: 'b21', name: "Commander O'Neil", note: 'Aeonia Swamp' },
+      { id: 'b22', name: 'Nox Swordstress & Nox Priest', note: 'Sellia' },
+      { id: 'b23', name: 'Putrid Tree Spirit', note: 'Caelid' },
+      { id: 'b24', name: 'Godfrey, First Elden Lord', note: 'Leyndell' },
+      { id: 'b25', name: 'Morgott, the Omen King', note: 'Leyndell' },
+      { id: 'b26', name: 'Draconic Tree Sentinel', note: 'Altus Plateau' },
+      { id: 'b27', name: 'Rykard, Lord of Blasphemy', note: 'Mt. Gelmir' },
+      { id: 'b28', name: 'Volcano Manor Godskin Noble', note: 'Mt. Gelmir' },
+      { id: 'b29', name: 'Fire Giant', note: 'Mountaintops of the Giants' },
+      { id: 'b30', name: 'Godskin Duo', note: 'Crumbling Farum Azula' },
+      { id: 'b31', name: 'Maliketh, the Black Blade', note: 'Crumbling Farum Azula' },
+      { id: 'b32', name: 'Dragonlord Placidusax', note: 'Crumbling Farum Azula' },
+      { id: 'b33', name: 'Astel, Stars of Darkness', note: 'Consecrated Snowfield' },
+      { id: 'b34', name: 'Commander Niall', note: 'Castle Sol' },
+      { id: 'b35', name: 'Radagon of the Golden Order', note: 'Erdtree' },
+      { id: 'b36', name: 'Elden Beast', note: 'Erdtree' },
+      { id: 'b37', name: 'Mohg, Lord of Blood', note: 'Mohgwyn Palace' },
+      { id: 'b38', name: 'Astel, Naturalborn of the Void', note: 'Grand Cloister' },
+      { id: 'b39', name: 'Loretta, Knight of the Haligtree', note: 'Haligtree' },
+      // Shadow of the Erdtree
+      { id: 'b40', name: 'Messmer the Impaler', note: 'Shadow of the Erdtree' },
+      { id: 'b41', name: 'Midra, Lord of Frenzied Flame', note: 'Shadow of the Erdtree' },
+      { id: 'b42', name: 'Romina, Saint of the Bud', note: 'Shadow of the Erdtree' },
+      { id: 'b43', name: 'Scadutree Avatar', note: 'Shadow of the Erdtree' },
+      { id: 'b44', name: 'Promised Consort Radahn', note: 'Shadow of the Erdtree' },
+      { id: 'b45', name: 'Metyr, Mother of Fingers', note: 'Shadow of the Erdtree' },
+      { id: 'b46', name: 'Putrescent Knight', note: 'Shadow of the Erdtree' },
+      { id: 'b47', name: 'Commander Gaius', note: 'Shadow of the Erdtree' },
+      { id: 'b48', name: 'Bayle the Dread', note: 'Shadow of the Erdtree' },
+    ]
+  },
+  {
+    id: 'minibosses',
+    label: 'Minibosses',
+    items: [
+      { id: 'mb1', name: 'Beastman of Farum Azula', note: 'Groveside Cave' },
+      { id: 'mb2', name: "Night's Cavalry (Limgrave)", note: 'Limgrave (night)' },
+      { id: 'mb3', name: "Night's Cavalry (Liurnia)", note: 'Liurnia (night)' },
+      { id: 'mb4', name: "Night's Cavalry (Caelid)", note: 'Caelid (night)' },
+      { id: 'mb5', name: "Night's Cavalry (Altus)", note: 'Altus Plateau (night)' },
+      { id: 'mb6', name: 'Death Rite Bird (Limgrave)', note: 'Limgrave (night)' },
+      { id: 'mb7', name: 'Death Rite Bird (Mountaintops)', note: 'Mountaintops (night)' },
+      { id: 'mb8', name: 'Black Knife Assassin', note: 'Deathtouched Catacombs' },
+      { id: 'mb9', name: 'Cemetery Shade', note: 'Tombsward Catacombs' },
+      { id: 'mb10', name: 'Ulcerated Tree Spirit', note: "Fringefolk Hero's Grave" },
+      { id: 'mb11', name: 'Crucible Knight', note: "Fringefolk Hero's Grave" },
+      { id: 'mb12', name: 'Miranda the Blighted Bloom', note: 'Tombsward Cave' },
+      { id: 'mb13', name: 'Bloodhound Knight', note: 'Lakeside Crystal Cave' },
+      { id: 'mb14', name: 'Ancient Dragon Lansseax', note: 'Altus Plateau' },
+      { id: 'mb15', name: 'Erdtree Guardian', note: 'Various' },
+      { id: 'mb16', name: 'Godskin Apostle', note: 'Dragonbarrow' },
+      { id: 'mb17', name: 'Putrid Crystallian Trio', note: 'Sellia Crystal Tunnel' },
+      { id: 'mb18', name: 'Omenkiller', note: 'Village of the Albinaurics' },
+      { id: 'mb19', name: 'Abductor Virgins', note: 'Raya Lucaria' },
+      { id: 'mb20', name: 'Erdtree Avatar (Minor Erdtree, Liurnia)', note: 'Liurnia' },
+      { id: 'mb21', name: 'Erdtree Avatar (Minor Erdtree, Caelid)', note: 'Caelid' },
+      { id: 'mb22', name: 'Crucible Knight & Crucible Knight Ordovis', note: 'Auriza Hero\'s Grave' },
+      { id: 'mb23', name: 'Esgar, Priest of Blood', note: 'Mohgwyn Palace' },
+    ]
+  },
+  {
+    id: 'npc_invaders',
+    label: 'NPC Invaders',
+    subsections: [
+      {
+        title: 'Limgrave',
+        items: [
+          { id: 'npc1', name: 'Bloody Finger Nerijus', note: 'Murkwater Coast' },
+          { id: 'npc2', name: 'Bloody Finger Hunter Yura', note: 'Murkwater Coast (aid)' },
+          { id: 'npc3', name: 'Festering Bloody Finger Thistle', note: 'Church of Dragon Communion' },
+          { id: 'npc4', name: 'Recusant Henricus', note: 'Stormveil Castle' },
+        ]
+      },
+      {
+        title: 'Liurnia',
+        items: [
+          { id: 'npc5', name: 'Bloody Finger Ravenmount Assassin', note: 'Raya Lucaria Academy road' },
+          { id: 'npc6', name: 'Maleigh Marais, Shaded Castle Lord', note: 'Shaded Castle' },
+          { id: 'npc7', name: 'Eleonora, Violet Bloody Finger', note: 'Second Church of Marika' },
+          { id: 'npc8', name: 'Recusant Bernahl', note: 'Volcano Manor quest' },
+        ]
+      },
+      {
+        title: 'Caelid',
+        items: [
+          { id: 'npc9', name: 'Millicent', note: 'Gowry\'s quest — Church of the Plague' },
+          { id: 'npc10', name: 'Juno Hoslow, Knight of Blood', note: 'Mountaintops of the Giants' },
+        ]
+      },
+      {
+        title: 'Altus / Leyndell',
+        items: [
+          { id: 'npc11', name: 'Inquisitor Ghiza', note: 'Volcano Manor' },
+          { id: 'npc12', name: 'Vargram the Raging Wolf', note: 'Leyndell, Royal Capital' },
+          { id: 'npc13', name: 'Errant Sorcerer Wilhelm', note: 'Leyndell, Royal Capital' },
+        ]
+      },
+      {
+        title: 'Mountaintops / Snowfield',
+        items: [
+          { id: 'npc14', name: 'Anastasia, Tarnished-Eater', note: 'Mountaintops bridge' },
+          { id: 'npc15', name: 'Ensha of the Royal Remains', note: 'Roundtable Hold (after Great Rune)' },
+          { id: 'npc16', name: 'Bloody Finger Okina', note: 'Church of Repose' },
+        ]
+      },
+      {
+        title: 'Shadow of the Erdtree',
+        items: [
+          { id: 'npc17', name: 'Chief Bloodfiend', note: 'Wherever invaders appear — SotE' },
+          { id: 'npc18', name: 'Aged One\'s Exultation', note: 'SotE roads' },
+          { id: 'npc19', name: 'Hornsent', note: 'SotE — Hornsent quest' },
+          { id: 'npc20', name: 'Needle Knight Leda', note: 'SotE — Leda quest' },
+          { id: 'npc21', name: 'Sir Ansbach', note: 'SotE — Ansbach quest' },
+          { id: 'npc22', name: 'Dryleaf Dane', note: 'SotE — Dane quest' },
+          { id: 'npc23', name: 'Thiollier', note: 'SotE — Thiollier quest' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'dungeons',
+    label: 'Dungeons',
+    subsections: [
+      {
+        title: 'Limgrave',
+        items: [
+          { id: 'd1', name: 'Stormfoot Catacombs' },
+          { id: 'd2', name: 'Murkwater Catacombs' },
+          { id: 'd3', name: 'Deathtouched Catacombs' },
+          { id: 'd4', name: 'Murkwater Cave' },
+          { id: 'd5', name: 'Groveside Cave' },
+          { id: 'd6', name: 'Coastal Cave' },
+          { id: 'd7', name: 'Highroad Cave' },
+          { id: 'd8', name: "Fringefolk Hero's Grave" },
+          { id: 'd9', name: 'Limgrave Tunnels' },
+        ]
+      },
+      {
+        title: 'Weeping Peninsula',
+        items: [
+          { id: 'd10', name: 'Tombsward Catacombs' },
+          { id: 'd11', name: "Impaler's Catacombs" },
+          { id: 'd12', name: 'Tombsward Cave' },
+          { id: 'd13', name: 'Morne Tunnel' },
+        ]
+      },
+      {
+        title: 'Liurnia',
+        items: [
+          { id: 'd14', name: 'Black Knife Catacombs' },
+          { id: 'd15', name: 'Cliffbottom Catacombs' },
+          { id: 'd16', name: "Road's End Catacombs" },
+          { id: 'd17', name: 'Lakeside Crystal Cave' },
+          { id: 'd18', name: 'Academy Crystal Cave' },
+          { id: 'd19', name: 'Stillwater Cave' },
+          { id: 'd20', name: 'Liurnia of the Lakes Tunnel' },
+          { id: 'd21', name: 'Ruin-Strewn Precipice' },
+        ]
+      },
+      {
+        title: 'Caelid',
+        items: [
+          { id: 'd22', name: 'Caelid Catacombs' },
+          { id: 'd23', name: 'Dragonbarrow Cave' },
+          { id: 'd24', name: 'Gael Tunnel' },
+          { id: 'd25', name: 'Sellia Crystal Tunnel' },
+          { id: 'd26', name: 'War-Dead Catacombs' },
+        ]
+      },
+      {
+        title: 'Altus Plateau / Mt. Gelmir',
+        items: [
+          { id: 'd27', name: "Auriza Hero's Grave" },
+          { id: 'd28', name: 'Auriza Side Tomb' },
+          { id: 'd29', name: 'Unsightly Catacombs' },
+          { id: 'd30', name: "Sage's Cave" },
+          { id: 'd31', name: 'Altus Tunnel' },
+          { id: 'd32', name: 'Old Altus Tunnel' },
+          { id: 'd33', name: "Gelmir Hero's Grave" },
+        ]
+      },
+      {
+        title: 'Mountaintops / Snowfield / Haligtree',
+        items: [
+          { id: 'd34', name: "Giants' Mountaintop Catacombs" },
+          { id: 'd35', name: 'Consecrated Snowfield Catacombs' },
+          { id: 'd36', name: 'Cave of the Forlorn' },
+          { id: 'd37', name: "Spiritcaller's Cave" },
+        ]
+      },
+      {
+        title: 'Shadow of the Erdtree',
+        items: [
+          { id: 'd38', name: 'Belurat Gaol' },
+          { id: 'd39', name: 'Fog Rift Catacombs' },
+          { id: 'd40', name: "Lamenter's Gaol" },
+          { id: 'd41', name: 'Scorpion River Catacombs' },
+          { id: 'd42', name: 'Specimen Storehouse' },
+          { id: 'd43', name: "Shadow Keep, Back Gate" },
+          { id: 'd44', name: 'Darklight Catacombs' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'grace',
+    label: 'Sites of Grace',
+    subsections: [
+      {
+        title: 'Limgrave',
+        items: [
+          { id: 'g1', name: 'The First Step' }, { id: 'g2', name: 'Stranded Graveyard' },
+          { id: 'g3', name: 'Church of Elleh' }, { id: 'g4', name: 'Gatefront Ruins' },
+          { id: 'g5', name: 'Stormhill Shack' }, { id: 'g6', name: "Warmaster's Shack" },
+          { id: 'g7', name: 'Agheel Lake North' }, { id: 'g8', name: 'Agheel Lake South' },
+          { id: 'g9', name: 'Dragon-Burnt Ruins' }, { id: 'g10', name: 'Mistwood Outskirts' },
+          { id: 'g11', name: 'Fort Haight West' }, { id: 'g12', name: 'Third Church of Marika' },
+          { id: 'g13', name: "Artist's Shack (Limgrave)" }, { id: 'g14', name: 'Summonwater Village Outskirts' },
+          { id: 'g15', name: 'Murkwater Coast' }, { id: 'g16', name: 'Highroad Cave' },
+          { id: 'g17', name: 'Coastal Cave' }, { id: 'g18', name: 'Church of Dragon Communion' },
+        ]
+      },
+      {
+        title: 'Stormveil Castle',
+        items: [
+          { id: 'g19', name: 'Stormveil Main Gate' }, { id: 'g20', name: 'Gateside Chamber' },
+          { id: 'g21', name: 'Rampart Tower' }, { id: 'g22', name: 'Liftside Chamber' },
+          { id: 'g23', name: 'Secluded Cell' }, { id: 'g24', name: 'Godrick the Grafted' },
+        ]
+      },
+      {
+        title: 'Weeping Peninsula',
+        items: [
+          { id: 'g25', name: 'Bridge of Sacrifice' }, { id: 'g26', name: 'Castle Morne Rampart' },
+          { id: 'g27', name: "Isolated Merchant's Shack (WP)" }, { id: 'g28', name: 'Tombsward' },
+          { id: 'g29', name: 'Church of Pilgrimage' }, { id: 'g30', name: 'Ailing Village Outskirts' },
+        ]
+      },
+      {
+        title: 'Liurnia of the Lakes',
+        items: [
+          { id: 'g31', name: 'Lake-Facing Cliffs' }, { id: 'g32', name: 'Liurnia Lake Shore' },
+          { id: 'g33', name: 'Laskyar Ruins' }, { id: 'g34', name: 'Academy Gate Town' },
+          { id: 'g35', name: 'South Raya Lucaria Gate' }, { id: 'g36', name: 'Main Caria Manor Gate' },
+          { id: 'g37', name: 'Village of the Albinaurics' }, { id: 'g38', name: "Slumbering Wolf's Shack" },
+          { id: 'g39', name: 'Scenic Isle' }, { id: 'g40', name: 'Eastern Liurnia Lake Shore' },
+          { id: 'g41', name: 'Crystalline Woods' }, { id: 'g42', name: "Ranni's Rise" },
+          { id: 'g43', name: 'Church of Vows' }, { id: 'g44', name: 'Converted Fringe Tower' },
+        ]
+      },
+      {
+        title: 'Caelid',
+        items: [
+          { id: 'g45', name: 'Smoldering Church' }, { id: 'g46', name: 'Rotview Balcony' },
+          { id: 'g47', name: 'Fort Gael North' }, { id: 'g48', name: 'Caelid Highway South' },
+          { id: 'g49', name: 'Sellia Under-Stair' }, { id: 'g50', name: 'Church of the Plague' },
+          { id: 'g51', name: 'Dragonbarrow West' }, { id: 'g52', name: 'Dragonbarrow Fork' },
+          { id: 'g53', name: 'Farum Greatbridge' }, { id: 'g54', name: 'Bestial Sanctum' },
+        ]
+      },
+      {
+        title: 'Altus Plateau',
+        items: [
+          { id: 'g55', name: 'Altus Plateau' }, { id: 'g56', name: 'Altus Highway Junction' },
+          { id: 'g57', name: 'Shaded Castle Ramparts' }, { id: 'g58', name: 'Minor Erdtree (Altus)' },
+          { id: 'g59', name: 'Bower of Bounty' }, { id: 'g60', name: 'Writheblood Ruins' },
+          { id: 'g61', name: 'Forest-Spanning Greatbridge' }, { id: 'g62', name: 'Outer Wall Battleground' },
+        ]
+      },
+      {
+        title: 'Leyndell, Royal Capital',
+        items: [
+          { id: 'g63', name: 'Outer Wall Phantom Tree' }, { id: 'g64', name: 'Avenue Balcony' },
+          { id: 'g65', name: 'East Capital Rampart' }, { id: 'g66', name: 'West Capital Rampart' },
+          { id: 'g67', name: 'Erdtree Sanctuary' }, { id: 'g68', name: "Queen's Bedchamber" },
+          { id: 'g69', name: 'Divine Bridge' },
+        ]
+      },
+      {
+        title: 'Mountaintops of the Giants',
+        items: [
+          { id: 'g70', name: 'Zamor Ruins' }, { id: 'g71', name: "Giants' Gravepost" },
+          { id: 'g72', name: 'Church of Repose' }, { id: 'g73', name: 'First Church of Marika' },
+          { id: 'g74', name: 'Flame Peak' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'npcs',
+    label: 'NPC Quests',
+    subsections: [
+      {
+        title: 'Base Game',
+        items: [
+          { id: 'n1', name: 'Blackguard Big Boggart' },
+          { id: 'n2', name: 'Blaidd the Half-Wolf' },
+          { id: 'n3', name: 'Bloody Finger Hunter Yura' },
+          { id: 'n4', name: 'Boc the Seamster' },
+          { id: 'n5', name: 'Brother Corhyn & Goldmask' },
+          { id: 'n6', name: 'D, Hunter of the Dead' },
+          { id: 'n7', name: 'Diallos' },
+          { id: 'n8', name: 'Dung Eater' },
+          { id: 'n9', name: 'Ensha of the Royal Remains' },
+          { id: 'n10', name: 'Fia, Deathbed Companion' },
+          { id: 'n11', name: 'Gowry & Millicent' },
+          { id: 'n12', name: 'Guurranq, Beast Clergyman' },
+          { id: 'n13', name: 'Hyetta' },
+          { id: 'n14', name: 'Irina & Edgar' },
+          { id: 'n15', name: 'Iron Fist Alexander' },
+          { id: 'n16', name: 'Jar-Bairn' },
+          { id: 'n17', name: 'Kenneth Haight' },
+          { id: 'n18', name: 'Knight Bernahl' },
+          { id: 'n19', name: 'Latenna the Albinauric' },
+          { id: 'n20', name: 'Nepheli Loux' },
+          { id: 'n21', name: 'Patches' },
+          { id: 'n22', name: 'Ranni the Witch' },
+          { id: 'n23', name: 'Roderika' },
+          { id: 'n24', name: 'Rogier' },
+          { id: 'n25', name: 'Rya / Zorayas' },
+          { id: 'n26', name: 'Seluvis' },
+          { id: 'n27', name: 'Sorceress Sellen' },
+          { id: 'n28', name: 'Tanith & Rykard' },
+          { id: 'n29', name: 'Thops' },
+          { id: 'n30', name: 'White Mask Varré' },
+        ]
+      },
+      {
+        title: 'Shadow of the Erdtree',
+        items: [
+          { id: 'n31', name: 'Count Ymir' },
+          { id: 'n32', name: 'Dragon Communion Priestess' },
+          { id: 'n33', name: 'Dryleaf Dane' },
+          { id: 'n34', name: 'Fire Knight Queelign' },
+          { id: 'n35', name: 'Hornsent' },
+          { id: 'n36', name: 'Igon' },
+          { id: 'n37', name: 'Jolán & Anna' },
+          { id: 'n38', name: 'Moore' },
+          { id: 'n39', name: 'Needle Knight Leda' },
+          { id: 'n40', name: 'Redmane Freyja' },
+          { id: 'n41', name: 'Sir Ansbach' },
+          { id: 'n42', name: 'Thiollier' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'armor',
+    label: 'Armor Sets',
+    subsections: [
+      {
+        title: 'Legendary / Unique Sets',
+        items: [
+          { id: 'ar1', name: 'Raging Wolf Set', note: 'Volcano Manor quest (Bernahl)' },
+          { id: 'ar2', name: "Malenia's Armor Set", note: 'Finger Reader after Malenia' },
+          { id: 'ar3', name: "Radahn's Lion Armor", note: 'Finger Reader after Radahn' },
+          { id: 'ar4', name: "Blaidd's Armor Set", note: "Blaidd's body — Ranni's Rise" },
+          { id: 'ar5', name: "Royal Knight Loretta's Set", note: "Finger Reader after Loretta (Haligtree)" },
+          { id: 'ar6', name: "Maliketh's Set", note: 'Finger Reader after Maliketh' },
+          { id: 'ar7', name: "Morgott's Set", note: 'Finger Reader after Morgott' },
+          { id: 'ar8', name: "Fia's Set", note: "Fia's body — Deeproot Depths" },
+          { id: 'ar9', name: "Godrick's Set", note: 'Finger Reader after Godrick' },
+          { id: 'ar10', name: 'Lusat\'s Set', note: 'Sellia Hideaway (Sellen quest)' },
+          { id: 'ar11', name: "Azur's Glintstone Set", note: 'Hermit Village (Mt. Gelmir)' },
+        ]
+      },
+      {
+        title: 'Notable Sets (Base Game)',
+        items: [
+          { id: 'ar12', name: 'Crucible Axe Set', note: 'Auriza Side Tomb' },
+          { id: 'ar13', name: 'Crucible Tree Set', note: "Stormveil — Nepheli's quest" },
+          { id: 'ar14', name: 'Black Knife Set', note: 'Black Knife Assassin (Sainted Hero\'s Grave)' },
+          { id: 'ar15', name: 'White Reed Set', note: 'Spiritcaller Cave ghost' },
+          { id: 'ar16', name: 'Bloodhound Knight Set', note: 'Gelmir Hero\'s Grave' },
+          { id: 'ar17', name: 'Bull-Goat Set', note: 'Volcano Manor — Bernahl quest chain' },
+          { id: 'ar18', name: 'Veteran\'s Set', note: 'Commander Niall drop (Castle Sol)' },
+          { id: 'ar19', name: 'Godskin Noble Set', note: 'Godskin Noble drops' },
+          { id: 'ar20', name: 'Godskin Apostle Set', note: 'Godskin Apostle drops' },
+          { id: 'ar21', name: 'Mushroom Set', note: 'Lake of Rot / Seethewater Cave' },
+          { id: 'ar22', name: 'Night\'s Cavalry Set', note: "Night's Cavalry drops" },
+          { id: 'ar23', name: 'Exile Set', note: 'Stormveil Castle soldiers' },
+          { id: 'ar24', name: 'Confessor Set', note: 'Starting set / Church of Vows' },
+          { id: 'ar25', name: 'Cleanrot Set', note: 'Cleanrot Knights — Caelid / Haligtree' },
+        ]
+      },
+      {
+        title: 'Shadow of the Erdtree Sets',
+        items: [
+          { id: 'ar26', name: "Messmer's Set", note: 'Finger Reader after Messmer' },
+          { id: 'ar27', name: 'Fire Knight Set', note: 'Fire Knights — SotE' },
+          { id: 'ar28', name: 'Horned Warrior Set', note: 'SotE soldiers' },
+          { id: 'ar29', name: "Leda's Set", note: "Leda's body — SotE quest" },
+          { id: 'ar30', name: "Dane's Set", note: "Dryleaf Dane quest — SotE" },
+          { id: 'ar31', name: 'Gaius Set', note: 'Commander Gaius drop — SotE' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'talismans',
+    label: 'Talismans',
+    subsections: [
+      {
+        title: 'Legendary Talismans',
+        items: [
+          { id: 't1', name: "Erdtree's Favor +2", note: 'Ashen Leyndell' },
+          { id: 't2', name: 'Radagon\'s Soreseal', note: 'Fort Faroth' },
+          { id: 't3', name: 'Marika\'s Soreseal', note: 'Elphael, Brace of the Haligtree' },
+          { id: 't4', name: 'Dragoncrest Greatshield Talisman', note: 'Elphael, Brace of the Haligtree' },
+          { id: 't5', name: 'Moon of Nokstella', note: 'Nokstella' },
+          { id: 't6', name: 'Godfrey Icon', note: 'Golden Lineage Evergaol' },
+          { id: 't7', name: 'Graven-Mass Talisman', note: 'Albinauric Rise (Consecrated Snowfield)' },
+          { id: 't8', name: 'Old Lord\'s Talisman', note: 'Crumbling Farum Azula' },
+        ]
+      },
+      {
+        title: 'Other Notable Talismans',
+        items: [
+          { id: 't9', name: 'Crimson Amber Medallion', note: 'Various' },
+          { id: 't10', name: 'Cerulean Amber Medallion', note: 'Various' },
+          { id: 't11', name: 'Arsenal Charm', note: 'Various' },
+          { id: 't12', name: 'Blessed Dew Talisman', note: 'Divine Tower of West Altus' },
+          { id: 't13', name: 'Carian Filigreed Crest', note: 'Blaidd quest' },
+          { id: 't14', name: 'Claw Talisman', note: 'Stormveil Castle' },
+          { id: 't15', name: 'Dagger Talisman', note: 'Stormveil Castle' },
+          { id: 't16', name: 'Shard of Alexander', note: 'Alexander quest reward' },
+          { id: 't17', name: "Millicent's Prosthesis", note: 'Millicent quest reward' },
+          { id: 't18', name: 'Kindred of Rot\'s Exultation', note: "Kindred of Rot — Seethewater Cave" },
+          { id: 't19', name: 'Lord of Blood\'s Exultation', note: 'Esgar drop — Mohgwyn Palace' },
+          { id: 't20', name: 'Radagon Icon', note: 'Debate Parlor — Raya Lucaria' },
+          { id: 't21', name: 'Green Turtle Talisman', note: 'Summonwater Village' },
+          { id: 't22', name: 'Winged Sword Insignia', note: 'Stillwater Cave' },
+          { id: 't23', name: 'Rotten Winged Sword Insignia', note: 'Millicent quest (help her)' },
+          { id: 't24', name: 'Magic Scorpion Charm', note: "Seluvis quest" },
+          { id: 't25', name: 'Sacred Scorpion Charm', note: 'Anastasia drop' },
+          { id: 't26', name: 'Two Fingers Heirloom', note: "Stormveil Castle" },
+          { id: 't27', name: 'Ritual Sword Talisman', note: 'Lux Ruins' },
+          { id: 't28', name: 'Ritual Shield Talisman', note: 'Wyndham Catacombs' },
+        ]
+      },
+      {
+        title: 'Shadow of the Erdtree',
+        items: [
+          { id: 't29', name: "Bayle's Flame Lightning", note: 'SotE — Igon quest / Bayle' },
+          { id: 't30', name: 'Crusade Insignia', note: 'SotE' },
+          { id: 't31', name: 'Scadutree Favor', note: 'SotE' },
+          { id: 't32', name: 'Verdigris Discus', note: 'SotE' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'weapons',
+    label: 'Weapons',
+    subsections: [
+      {
+        title: 'Legendary Armaments',
+        items: [
+          { id: 'w1', name: 'Bolt of Gransax', note: 'Leyndell' },
+          { id: 'w2', name: 'Dark Moon Greatsword', note: "Ranni's Quest" },
+          { id: 'w3', name: 'Eclipse Shotel', note: 'Castle Sol' },
+          { id: 'w4', name: 'Grafted Blade Greatsword', note: 'Castle Morne' },
+          { id: 'w5', name: "Helphen's Steeple", note: 'Ghost drop' },
+          { id: 'w6', name: "Marais Executioner's Sword", note: 'Shaded Castle' },
+          { id: 'w7', name: 'Ruins Greatsword', note: 'Redmane Castle' },
+          { id: 'w8', name: 'Sword of Night and Flame', note: 'Caria Manor' },
+          { id: 'w9', name: 'Golden Order Greatsword', note: "Miquella's Haligtree" },
+        ]
+      },
+      {
+        title: 'Boss Soul Weapons',
+        items: [
+          { id: 'w10', name: 'Starscourge Greatsword', note: 'Radahn soul' },
+          { id: 'w11', name: 'Blasphemous Blade', note: 'Rykard soul' },
+          { id: 'w12', name: 'Sacred Relic Sword', note: 'Elden Beast soul' },
+          { id: 'w13', name: "Maliketh's Black Blade", note: 'Maliketh soul' },
+          { id: 'w14', name: 'Hand of Malenia', note: 'Malenia soul' },
+          { id: 'w15', name: "Godslayer's Greatsword", note: 'Divine Tower Caelid — Godskin Apostle' },
+          { id: 'w16', name: "Mohgwyn's Sacred Spear", note: 'Mohg soul' },
+        ]
+      },
+      {
+        title: 'Notable Weapons',
+        items: [
+          { id: 'w17', name: 'Rivers of Blood', note: 'Church of Repose — Okina' },
+          { id: 'w18', name: 'Moonveil', note: 'Gael Tunnel' },
+          { id: 'w19', name: 'Wing of Astel', note: 'Uhl Palace Ruins' },
+          { id: 'w20', name: 'Eleonora\'s Poleblade', note: 'Second Church of Marika — Eleonora' },
+          { id: 'w21', name: 'Serpentbone Blade', note: 'Volcano Manor quest reward' },
+          { id: 'w22', name: 'Bloodhound\'s Fang', note: 'Bloodhound Knight Darriwil' },
+          { id: 'w23', name: 'Reduvia', note: 'Nerijus drop' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'sorceries',
+    label: 'Sorceries',
+    subsections: [
+      {
+        title: 'Legendary Sorceries',
+        items: [
+          { id: 's1', name: 'Comet Azur', note: 'Sorcerer Azur — Mt. Gelmir' },
+          { id: 's2', name: 'Stars of Ruin', note: "Sorcerer Lusat — Sellia Hideaway" },
+          { id: 's3', name: 'Founding Rain of Stars', note: 'Heretical Rise' },
+          { id: 's4', name: "Ranni's Dark Moon", note: "Chelona's Rise" },
+          { id: 's5', name: 'Elden Stars', note: 'Deeproot Depths' },
+          { id: 's6', name: 'Eternal Darkness', note: 'Sellia Hideaway' },
+        ]
+      },
+      {
+        title: 'Useful Sorceries',
+        items: [
+          { id: 's7', name: 'Rock Sling', note: 'Street of Sages Ruins' },
+          { id: 's8', name: "Loretta's Greatbow", note: 'Loretta soul' },
+          { id: 's9', name: "Lusat's Glintstone Staff", note: 'Sellia Hideaway' },
+          { id: 's10', name: 'Meteorite Staff', note: 'Street of Sages Ruins' },
+          { id: 's11', name: 'Terra Magica', note: 'Academy of Raya Lucaria' },
+          { id: 's12', name: 'Adula\'s Moonblade', note: "Cathedral of Manus Celes" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'incantations',
+    label: 'Incantations',
+    subsections: [
+      {
+        title: 'Legendary Incantations',
+        items: [
+          { id: 'i1', name: 'Flame of the Fell God', note: 'Adan soul' },
+          { id: 'i2', name: 'Frenzied Burst', note: 'Church of Inhibition' },
+          { id: 'i3', name: "Greyoll's Roar", note: 'Greyoll soul' },
+          { id: 'i4', name: "Placidusax's Ruin", note: 'Placidusax soul' },
+          { id: 'i5', name: 'Elden Stars', note: 'Deeproot Depths' },
+          { id: 'i6', name: 'Discus of Light', note: 'Isolated Divine Tower' },
+          { id: 'i7', name: 'Triple Rings of Light', note: 'Isolated Divine Tower' },
+        ]
+      },
+      {
+        title: 'Golden Order / Fundamentalist',
+        items: [
+          { id: 'i8', name: 'Erdtree Heal' }, { id: 'i9', name: 'Golden Vow' },
+          { id: 'i10', name: "Blessing's Boon" }, { id: 'i11', name: 'Law of Regression' },
+          { id: 'i12', name: 'Radagon\'s Rings of Light' },
+        ]
+      },
+      {
+        title: 'Dragon Communion',
+        items: [
+          { id: 'i13', name: 'Dragonclaw' }, { id: 'i14', name: 'Dragonfire' },
+          { id: 'i15', name: 'Rotten Breath' }, { id: 'i16', name: "Agheel's Flame" },
+          { id: 'i17', name: "Borealis's Mist" }, { id: 'i18', name: "Greyoll's Roar" },
+        ]
+      },
+      {
+        title: 'Crucible / Frenzied Flame',
+        items: [
+          { id: 'i19', name: 'Aspect of the Crucible: Tail' },
+          { id: 'i20', name: 'Aspect of the Crucible: Horns' },
+          { id: 'i21', name: 'Aspect of the Crucible: Breath' },
+          { id: 'i22', name: 'Flame of Frenzy' },
+          { id: 'i23', name: 'Unendurable Frenzy' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'spiritashes',
+    label: 'Spirit Ashes',
+    subsections: [
+      {
+        title: 'Legendary Spirit Ashes',
+        items: [
+          { id: 'sa1', name: 'Mimic Tear Ashes', note: 'Nokron' },
+          { id: 'sa2', name: 'Black Knife Tiche', note: "Ranni's Quest — Alecto" },
+          { id: 'sa3', name: 'Redmane Knight Ogha', note: 'War-Dead Catacombs' },
+          { id: 'sa4', name: 'Ancient Dragon Knight Kristoff', note: "Auriza Hero's Grave" },
+          { id: 'sa5', name: 'Cleanrot Knight Finlay', note: 'Elphael, Brace of the Haligtree' },
+          { id: 'sa6', name: 'Lhutel the Headless', note: 'Cemetery Shade soul' },
+          { id: 'sa7', name: 'Nightmaiden & Swordstress Puppets', note: 'Nokstella' },
+        ]
+      },
+      {
+        title: 'Other Notable Ashes',
+        items: [
+          { id: 'sa8', name: 'Lone Wolf Ashes', note: 'Roderika' },
+          { id: 'sa9', name: 'Jellyfish Ashes', note: 'Stormhill Shack' },
+          { id: 'sa10', name: 'Banished Knight Oleg', note: "Fringefolk Hero's Grave" },
+          { id: 'sa11', name: 'Greatshield Soldier Ashes', note: 'Nokron' },
+          { id: 'sa12', name: 'Latenna the Albinauric', note: "Slumbering Wolf's Shack" },
+          { id: 'sa13', name: 'Omenkiller Rollo', note: 'Volcano Manor dungeon' },
+          { id: 'sa14', name: "Dung Eater Puppet", note: 'Seluvis quest — Dung Eater route' },
+          { id: 'sa15', name: 'Nepheli Loux Puppet', note: "Seluvis quest — Nepheli route" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'achievements',
+    label: 'Achievements',
+    items: [
+      { id: 'ach1', name: 'Elden Ring', note: 'Elden Lord ending' },
+      { id: 'ach2', name: 'Age of the Stars', note: 'Ranni ending' },
+      { id: 'ach3', name: 'Lord of the Frenzied Flame', note: 'Frenzied Flame ending' },
+      { id: 'ach4', name: 'Erdtree Aflame', note: 'Burn the Erdtree' },
+      { id: 'ach5', name: 'Shardbearer Godrick', note: 'Defeat Godrick' },
+      { id: 'ach6', name: 'Shardbearer Rennala', note: 'Defeat Rennala' },
+      { id: 'ach7', name: 'Shardbearer Radahn', note: 'Defeat Radahn' },
+      { id: 'ach8', name: 'Shardbearer Morgott', note: 'Defeat Morgott' },
+      { id: 'ach9', name: 'Shardbearer Rykard', note: 'Defeat Rykard' },
+      { id: 'ach10', name: 'Shardbearer Malenia', note: 'Defeat Malenia' },
+      { id: 'ach11', name: 'Shardbearer Mohg', note: 'Defeat Mohg' },
+      { id: 'ach12', name: 'Legendary Armaments', note: 'Collect all legendary weapons' },
+      { id: 'ach13', name: 'Legendary Talismans', note: 'Collect all legendary talismans' },
+      { id: 'ach14', name: 'Legendary Ashen Remains', note: 'Collect all legendary ashes' },
+      { id: 'ach15', name: 'Legendary Sorceries and Incantations', note: 'Collect all legendary spells' },
+      { id: 'ach16', name: 'Rune Bear Slayer', note: 'Slay a Rune Bear' },
+      { id: 'ach17', name: 'Dragonslayer', note: 'Slay a Dragon' },
+      { id: 'ach18', name: "Renna's Rise", note: "Complete Ranni's Quest" },
+      { id: 'ach19', name: 'Felled Demigod', note: 'Defeat any major boss' },
+    ]
+  }
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+const STORAGE_KEY = 'eldenring_tracker_v2';
+const NOTES_KEY   = 'eldenring_notes_v2';
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+}
+function loadNotes() {
+  try { return JSON.parse(localStorage.getItem(NOTES_KEY)) || {}; } catch { return {}; }
+}
+function saveState(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+function saveNotes(n) { localStorage.setItem(NOTES_KEY, JSON.stringify(n)); }
+
+let state  = loadState();
+let notes  = loadNotes();
+let activeSection = SECTIONS[0].id;
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function getAllItems(section) {
+  if (section.items) return section.items;
+  return section.subsections.flatMap(s => s.items);
+}
+
+function getTotals() {
+  let total = 0, done = 0;
+  SECTIONS.forEach(sec => getAllItems(sec).forEach(item => { total++; if (state[item.id]) done++; }));
+  return { total, done };
+}
+
+function getSectionTotals(section) {
+  const items = getAllItems(section);
+  return { total: items.length, done: items.filter(i => state[i.id]).length };
+}
+
+// ─────────────────────────────────────────────
+// SVGs
+// ─────────────────────────────────────────────
+const checkSVG = `<svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+  <path d="M1 4L4 7.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const pencilSVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+  <path d="M8.5 1.5L10.5 3.5L4 10H2V8L8.5 1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+</svg>`;
+
+// ─────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────
+function renderItem(item) {
+  const done    = !!state[item.id];
+  const userNote = notes[item.id] || '';
+  const hasNote  = userNote.length > 0;
+  return `
+    <div class="check-item-wrap ${done ? 'done' : ''}" data-id="${item.id}">
+      <div class="check-item" data-id="${item.id}">
+        <div class="check-box">${checkSVG}</div>
+        <span class="item-name">${item.name}</span>
+        ${item.note ? `<span class="item-note">${item.note}</span>` : ''}
+        <button class="note-btn ${hasNote ? 'has-note' : ''}" data-note-id="${item.id}" title="Add note" onclick="toggleNote(event,'${item.id}')">
+          ${pencilSVG}
+        </button>
+      </div>
+      <div class="note-area ${hasNote ? 'open' : ''}" id="note-area-${item.id}">
+        <textarea class="note-textarea"
+          placeholder="Add a note... (auto-saved)"
+          data-note-id="${item.id}"
+          oninput="updateNote(this,'${item.id}')"
+        >${escHtml(userNote)}</textarea>
+      </div>
+    </div>`;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderSection(section) {
+  const { total, done } = getSectionTotals(section);
+  const pct = total ? Math.round(done / total * 100) : 0;
+
+  let listHTML = '';
+  if (section.subsections) {
+    listHTML = section.subsections.map(sub => `
+      <div class="subsection">
+        <div class="subsection-title">${sub.title}</div>
+        <div class="checklist">${sub.items.map(renderItem).join('')}</div>
+      </div>`).join('');
+  } else {
+    listHTML = `<div class="checklist">${section.items.map(renderItem).join('')}</div>`;
+  }
+
+  return `
+    <div class="section ${section.id === activeSection ? 'active' : ''}" id="sec-${section.id}">
+      <div class="section-header">
+        <div class="section-title">${section.label}</div>
+        <div class="section-count"><span>${done}</span> / ${total} complete</div>
+      </div>
+      <div class="section-progress">
+        <div class="section-progress-label"><span>Progress</span><span>${pct}%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="controls">
+        <button class="ctrl-btn" onclick="markAll('${section.id}', true)">Mark All Done</button>
+        <button class="ctrl-btn danger" onclick="markAll('${section.id}', false)">Clear All</button>
+      </div>
+      ${listHTML}
+    </div>`;
+}
+
+function renderNav() {
+  return SECTIONS.map(sec => {
+    const { total, done } = getSectionTotals(sec);
+    const pct = total ? Math.round(done / total * 100) : 0;
+    return `<button class="tab-btn ${sec.id === activeSection ? 'active' : ''}" data-sec="${sec.id}">
+      ${sec.label} <span style="opacity:0.5;font-size:0.85em">${pct}%</span>
+    </button>`;
+  }).join('');
+}
+
+function updateTotalBar() {
+  const { total, done } = getTotals();
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('total-bar').style.width = pct + '%';
+  document.getElementById('total-pct').textContent = pct + '%';
+}
+
+// ─────────────────────────────────────────────
+// NOTE LOGIC
+// ─────────────────────────────────────────────
+function toggleNote(e, id) {
+  e.stopPropagation();
+  const area = document.getElementById('note-area-' + id);
+  const isOpen = area.classList.toggle('open');
+  if (isOpen) area.querySelector('textarea').focus();
+}
+
+let noteTimers = {};
+function updateNote(textarea, id) {
+  const val = textarea.value;
+  clearTimeout(noteTimers[id]);
+  noteTimers[id] = setTimeout(() => {
+    notes[id] = val;
+    saveNotes(notes);
+    // Update button style
+    const btn = document.querySelector(`.note-btn[data-note-id="${id}"]`);
+    if (btn) btn.classList.toggle('has-note', val.length > 0);
+  }, 400);
+}
+
+// ─────────────────────────────────────────────
+// MOUNT & EVENTS
+// ─────────────────────────────────────────────
+function mount() {
+  document.getElementById('nav-tabs').innerHTML = renderNav();
+  document.getElementById('main-content').innerHTML = SECTIONS.map(renderSection).join('');
+  updateTotalBar();
+  attachEvents();
+}
+
+function attachEvents() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeSection = btn.dataset.sec;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('sec-' + activeSection).classList.add('active');
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    });
+  });
+
+  document.querySelectorAll('.check-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.note-btn')) return;
+      const id = el.dataset.id;
+      state[id] = !state[id];
+      saveState(state);
+      el.closest('.check-item-wrap').classList.toggle('done', state[id]);
+      refreshSection(activeSection);
+      updateTotalBar();
+    });
+  });
+}
+
+function refreshSection(secId) {
+  const section = SECTIONS.find(s => s.id === secId);
+  if (!section) return;
+  const { total, done } = getSectionTotals(section);
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const sec = document.getElementById('sec-' + secId);
+  sec.querySelector('.section-count').innerHTML = `<span>${done}</span> / ${total} complete`;
+  const labels = sec.querySelectorAll('.section-progress-label span');
+  labels[1].textContent = pct + '%';
+  sec.querySelector('.section-progress .progress-fill').style.width = pct + '%';
+  const tab = document.querySelector(`.tab-btn[data-sec="${secId}"] span`);
+  if (tab) tab.textContent = pct + '%';
+}
+
+function markAll(secId, value) {
+  const section = SECTIONS.find(s => s.id === secId);
+  if (!section) return;
+  getAllItems(section).forEach(item => { state[item.id] = value; });
+  saveState(state);
+  document.getElementById('sec-' + secId).querySelectorAll('.check-item-wrap').forEach(el => {
+    el.classList.toggle('done', !!state[el.dataset.id]);
+  });
+  refreshSection(secId);
+  updateTotalBar();
+}
+
+mount();
+</script>
+</body>
+</html>
